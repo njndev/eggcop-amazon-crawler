@@ -13,31 +13,8 @@ Apify.main(async () => {
     const requestQueue = await Apify.openRequestQueue();
     const input = await Apify.getValue('INPUT');
     const env = await Apify.getEnv();
-    const { scraper, maxResults, maxReviews } = input;
-    let getReviews = false;
-    if (maxReviews && maxReviews > 0) {
-        getReviews = true;
-    }
-    let limitResults;
-    try{
-        switch (input.searchType) {
-            case "keywords":
-                if (maxReviews || maxReviews > 10) {
-                    limitResults = maxReviews > 10 ?
-                        (maxResults * (2 + maxReviews / 10)) + input.search.split(',').length :
-                        maxResults * 3 + input.search.split(',').length;
-                } else {
-                    limitResults = maxResults * 2 + input.search.split(',').length;
-                }
-
-            default:
-                limitResults = maxReviews > 10 ? maxResults * (2 + maxReviews / 10) : maxResults === 0 ?
-                    maxResults : maxResults * 3;
-
-        }
-    } catch (e) {
-        limitResults = maxResults === 0 ? maxResults : maxResults * 3;
-    }
+    const { scraper, maxResults } = input;
+    let limitResults = maxResults === 0 ? maxResults : maxResults * 3;
     limitResults = !maxResults ? null : limitResults; //handle undefined or null
     const urls = await createSearchUrls(input);
 

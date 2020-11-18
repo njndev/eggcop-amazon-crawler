@@ -14,8 +14,8 @@ async function createSearchUrls(input) {
     let searchUrlBase;
     const urlsToProcess = [];
   
-    if ((!input.keywords) && (!input.directUrls) && (!input.search)) {
-        throw new Error('Keywords/Asins required');
+    if ((!input.keywords) && (!input.productUrl)) {
+        throw new Error('Keywords/Url required');
     }
     if (!input.searchType) {
         throw new Error('SearchType required');
@@ -23,7 +23,6 @@ async function createSearchUrls(input) {
     if (input.searchType === "keywords") {
         try {
             searchUrlBase = getBaseUrl();
-            const cat = input.country.toUpperCase() == 'US' ? getCatPath(input.category) : ``;
             if (input.search.length !== 0) {
                 if (input.search.indexOf(',').length !== -1) {
                     const keywords = input.search.split(',');
@@ -53,17 +52,14 @@ async function createSearchUrls(input) {
         }
     }
 
-    if (input.searchType === "directUrls" ) {
+    if (input.searchType === "productUrl" ) {
         try {
             try {
-                const directSearchUrl = JSON.parse(input.search)
-                for (const request of directSearchUrl) {
-                    request.userData.domain = getBaseUrl();
-                    urlsToProcess.push(request);
-                }
+                request.userData.domain = input.search;
+                urlsToProcess.push(request);
             } catch (e) {
-                const directSearchUrl =  input.search;
-                for (const url of directSearchUrl.split(","))   {
+                const searchUrl =  input.search;
+                for (const url of searchUrl.split(","))   {
                     const request = {
                         url: url,
                         userData:{
@@ -80,25 +76,6 @@ async function createSearchUrls(input) {
 
         }
 
-    }
-    //Handle older schema
-    if (input.asins) {
-        for (const item of input.asins) {
-            for (const country of item.countries) {
-                searchUrlBase = getBaseUrl();
-                const sellerUrl = `${searchUrlBase}gp/offer-listing/${item.asin}`;
-                urlsToProcess.push({
-                    url: sellerUrl,
-                    userData: {
-                        label: 'seller',
-                        asin: item.asin,
-                        detailUrl: `${searchUrlBase}dp/${item.asin}`,
-                        sellerUrl,
-                        country: country.toUpperCase(),
-                    },
-                });
-            }
-        }
     }
 
     if (input.keywords) {
@@ -127,10 +104,8 @@ async function createSearchUrls(input) {
         }
     }
 
-    if (input.directUrls) {
-        for (const request of input.directUrls) {
-            urlsToProcess.push(request);
-        }
+    if (input.productUrl) {
+        urlsToProcess.push(input.productUrl);
     }
     if (urlsToProcess.length !== 0) {
         log.info(`Going to enqueue ${urlsToProcess.length} requests from input.`);
