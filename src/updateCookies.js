@@ -1,10 +1,7 @@
 const Apify = require('apify');
 
 async function updateCookies(params) {
-    const { domain, delivery } = params;
-    const deliverCountry = delivery.split(',');
-    const code = deliverCountry[0];
-    const deliveryCode = deliverCountry[1];
+    const { domain } = params;
     // console.log(deliveryCode)
     const browser = await Apify.launchPuppeteer( {headless: true, slowMo: 200 });
     const page = await browser.newPage();
@@ -33,8 +30,8 @@ async function updateCookies(params) {
             await page.click('.a-declarative > .a-dropdown-container > #GLUXCountryListDropdown > .a-button-inner > .a-button-text');
 
             // console.log(`.a-popover-wrapper #${deliveryCode}`);
-            await page.waitForSelector(`.a-popover-wrapper #${deliveryCode}`);
-            await page.click(`.a-popover-wrapper #${deliveryCode}`);
+            //await page.waitForSelector(`.a-popover-wrapper #${deliveryCode}`);
+            //await page.click(`.a-popover-wrapper #${deliveryCode}`);
             // console.log(page.cookies())
         }
         catch (e) {

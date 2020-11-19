@@ -4,11 +4,9 @@ const { parseItemUrls } = require('./parseItemUrls');
 const parsePaginationUrl = require('./parsePaginationUrl');
 const { saveItem, getOriginUrl } = require('./utils');
 const detailParser = require('./parseItemDetail');
-const { parseItemReviews } = require('./parseItemReviews');
 const { log } = Apify.utils;
 async function runCrawler(params) {
-    const {$, session, request, requestQueue, input, getReviews, env} = params;
-    request.userData.maxReviews = input.maxReviews;
+    const {$, session, request, requestQueue, input, env} = params;
     const { label } = request.userData;
     // log.info($('#nav-global-location-slot').text())
     const urlOrigin = await getOriginUrl(request);
@@ -37,7 +35,6 @@ async function runCrawler(params) {
                         asin: item.asin,
                         detailUrl: item.detailUrl,
                         sellerUrl: item.sellerUrl,
-                        reviewsUrl: item.reviewsUrl
                     },
                 }, { forefront: true });
             }

@@ -2,11 +2,9 @@ const Apify = require('apify');
 
 const { log } = Apify.utils;
 
-async function parseItemDetail($, request, requestQueue, getReviews) {
-    const { sellerUrl, asin, detailUrl, reviewsUrl, delivery } = request.userData;
+async function parseItemDetail($, request, requestQueue) {
+    const { sellerUrl, asin, detailUrl } = request.userData;
     const item = {};
-    const reviewsConunt = $('#acrCustomerReviewText').length !== 0 ? $('#acrCustomerReviewText').eq(0).text() : null;
-    const stars = $('.reviewCountTextLinkedHistogram').length !== 0 ? $('.reviewCountTextLinkedHistogram').attr('title').match(/(\d+\.\d+)|\d+/)[0] : null;
     const details = {};
     const breadCrumbs = $('#wayfinding-breadcrumbs_feature_div').text().trim().split('\n')
         .filter(el => el.trim() != '')
@@ -28,17 +26,12 @@ async function parseItemDetail($, request, requestQueue, getReviews) {
             }
         });
     }
-    // if (getReviews) {
-    //     item.reviews = await parseItemReviews($, request, requestQueue);
-    // }
     item.InStock = $('#availability') ? true: false;
-    item.delivery = $('#delivery-message').text().trim();
+    //item.delivery = $('#delivery-message').text().trim();
     item.featureDesc = $('#featurebullets_feature_div').length !== 0 ? $('#featurebullets_feature_div').text().trim() : null;
     item.desc = $('#productDescription').length !== 0 ? $('#productDescription').text().trim() : null;
     item.breadCrumbs = breadCrumbs;
     item.NumberOfQuestions = $('#askATFLink').text().trim().match(/\d+/) ? parseInt($('#askATFLink').text().trim().match(/\d+/).shift()) : 0;
-    item.reviewsCount = reviewsConunt;
-    item.stars = stars;
     item.details = details;
     item.images = [];
     if ($('script:contains("ImageBlockATF")').length !== 0) {
@@ -58,29 +51,6 @@ async function parseItemDetail($, request, requestQueue, getReviews) {
                 }
             }
         }
-    }
-    if (getReviews) {
-        await requestQueue.addRequest({
-            url: reviewsUrl,
-            userData: {
-                asin,
-                detailUrl,
-                sellerUrl,
-                itemDetail: item,
-                label: 'reviews',
-            },
-        }, { forefront: true });
-    } else {
-        await requestQueue.addRequest({
-            url: sellerUrl,
-            userData: {
-                asin,
-                detailUrl,
-                sellerUrl,
-                itemDetail: item,
-                label: 'seller',
-            },
-        }, { forefront: true });
     }
 }
 
