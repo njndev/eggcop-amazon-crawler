@@ -1,4 +1,4 @@
-# Amazon Scraper
+# EGG AMAZON CRAWLER
 
 - [Features](#features)
 - [Sample result](#sample-result)
@@ -11,8 +11,6 @@
 ## Features
 
 This actor will crawl items for specified keywords on Amazon and will automatically extract all pages for those keywords. The scraper then extracts all seller offers for each given keyword, so if there is pagination on the seller offers page, note that you will get all offers.
-
-Find out more about why you should use this scraper for your business and suggestions on how to use the data in this [YouTube Video](https://www.youtube.com/watch?v=BsidLZKdYWQ).
 
 ## Sample result
 ```
@@ -109,7 +107,7 @@ The actor needs proxies to function correctly. We don't recommend running it on 
 
 
 ## Product URLs crawling
-If you already have your ASINs and don't want to crawl them manually, you can enqueue the requests from the input.
+If you already have your PRODUCT URLS and don't want to crawl them manually, you can enqueue the requests from the input.
 
 
 ## Additional options
@@ -123,4 +121,4 @@ Using a browser - 0.6025 CU when extracting 20 results from keyword search
 
 
 ## Changelog
-Changes related to new versions are listed in the [CHANGELOG file](https://github.com/VaclavRut/actor-amazon-crawler/blob/master/CHANGELOG.md).
+UNAVAILABLE.
