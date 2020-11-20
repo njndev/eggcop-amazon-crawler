@@ -13,8 +13,7 @@ function getBaseUrl() {
 async function createSearchUrls(input) {
     let searchUrlBase;
     const urlsToProcess = [];
-  
-    if ((!input.keywords) && (!input.productUrl)) {
+    if ((!input.search)) {
         throw new Error('Keywords/Url required');
     }
     if (!input.searchType) {
@@ -23,6 +22,7 @@ async function createSearchUrls(input) {
     if (input.searchType === "keywords") {
         try {
             searchUrlBase = getBaseUrl();
+            const cat = getCatPath(input.category);
             if (input.search.length !== 0) {
                 if (input.search.indexOf(',').length !== -1) {
                     const keywords = input.search.split(',');
@@ -48,64 +48,37 @@ async function createSearchUrls(input) {
                 }
             }
         } catch (e) {
-
+            log.error(JSON.stringify(e));
         }
     }
 
     if (input.searchType === "productUrl" ) {
         try {
-            try {
-                request.userData.domain = input.search;
-                urlsToProcess.push(request);
-            } catch (e) {
-                const searchUrl =  input.search;
-                for (const url of searchUrl.split(","))   {
+            if (input.search.indexOf(',').length !== -1) {
+                const urls = input.search.split(",");
+                for (const url of urls) {
                     const request = {
                         url: url,
-                        userData:{
-                            // label: url.includes('/s?k=') ? 'page' : 'detail',
-                            label: 'page',
-                            domain: url.split('/').splice(0,3).filter(el => el!== "").join('//'),
-                            // keyword: url.split('s?k=').pop().split('&')[0].replace('+',' ')
+                        userData: {
+                            label: 'detail',
+                            domain: url.split('/').splice(0, 3).filter(el => el !== "").join('//'),
                         }
                     };
                     urlsToProcess.push(request)
                 }
+            } else {
+                const request = {
+                    url: input.search,
+                    userData: {
+                        label: 'detail',
+                        domain: input.search.split('/').splice(0, 3).filter(el => el !== "").join('//'),
+                    }
+                };
+                urlsToProcess.push(request)
             }
         } catch (e) {
-
+            log.error(JSON.stringify(e));
         }
-
-    }
-
-    if (input.keywords) {
-        searchUrlBase = getBaseUrl();
-        if (input.keywords.length !== 0) {
-            if (input.keywords.indexOf(',').length !== -1) {
-                const keywords = input.keywords.split(',');
-                for (const keyword of keywords) {
-                    urlsToProcess.push({
-                        url: `${searchUrlBase}s?k=${keyword.replace(/\s+/g, '+').trim()}`,
-                        userData: {
-                            label: 'page',
-                            keyword,
-                        },
-                    });
-                }
-            } else {
-                urlsToProcess.push({
-                    url: `${searchUrlBase}s?k=${input.keywords.replace(/\s+/g, '+').trim()}`,
-                    userData: {
-                        label: 'page',
-                        keyword: input.keywords,
-                    },
-                });
-            }
-        }
-    }
-
-    if (input.productUrl) {
-        urlsToProcess.push(input.productUrl);
     }
     if (urlsToProcess.length !== 0) {
         log.info(`Going to enqueue ${urlsToProcess.length} requests from input.`);

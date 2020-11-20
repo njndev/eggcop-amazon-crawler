@@ -1,14 +1,14 @@
 const Apify = require('apify');
-const parseSellerDetail = require('./parseSellerDetail');
 const { parseItemUrls } = require('./parseItemUrls');
 const parsePaginationUrl = require('./parsePaginationUrl');
 const { saveItem, getOriginUrl } = require('./utils');
 const detailParser = require('./parseItemDetail');
+const importLinkParser = require('./parseImportLink');
+const variantParser = require('./parseVariant');
 const { log } = Apify.utils;
 async function runCrawler(params) {
     const {$, session, request, requestQueue, input, env} = params;
     const { label } = request.userData;
-    // log.info($('#nav-global-location-slot').text())
     const urlOrigin = await getOriginUrl(request);
     if (label === 'page') {
         // solve pagination if on the page, now support two layouts
@@ -56,53 +56,33 @@ async function runCrawler(params) {
         // extract info about item and about seller offers
     } else if (label === 'detail') {
         try {
-            await detailParser($, request, requestQueue, getReviews);
+            var detail = await detailParser($, request, requestQueue);
+            if (detail.Status == "completed") {
+                log.info(`--------------COMPLETED ${product.Title}--------------`);
+                await saveItem('RESULT', request, detail, input, env.defaultDatasetId);
+            }
         } catch (e) {
             log.error('Detail parsing failed', e);
-        }
-    } else if (label === 'reviews') {
-        try {
-            await parseItemReviews($, request, requestQueue);
-        } catch (e) {
-            log.error('Reviews parsing failed', e);
-        }
-    } else if (label === 'seller') {
-        try {
-            const item = await parseSellerDetail($, request);
-            if (item) {
-                let paginationUrlSeller;
-                const paginationEle = $('ul.a-pagination li.a-last a');
-                if (paginationEle.length !== 0) {
-                    paginationUrlSeller = urlOrigin + paginationEle.attr('href');
-                } else {
-                    paginationUrlSeller = false;
-                }
-
-                // if there is a pagination, go to another page
-                if (paginationUrlSeller !== false) {
-                    log.info(`Seller detail has pagination, crawling that now -> ${paginationUrlSeller}`);
-                    await requestQueue.addRequest({
-                        url: paginationUrlSeller,
-                        userData: {
-                            label: 'seller',
-                            itemDetail: request.userData.itemDetail,
-                            keyword: request.userData.keyword,
-                            asin: request.userData.asin,
-                            detailUrl: request.userData.detailUrl,
-                            sellerUrl: request.userData.sellerUrl,
-                            sellers: item.sellers,
-                        },
-                    }, { forefront: true });
-                }
-                else {
-                    const resultItem = input.reviews === "no" ? delete item.reviews : item;
-                    log.info(`Saving item url: ${request.url}`);
-                    await saveItem('RESULT', request, item, input, env.defaultDatasetId, session);
-                }
-            }
-        } catch (error) {
-            console.error(error);
             await saveItem('NORESULT', request, null, input, env.defaultDatasetId);
+        }
+    } else if (label === 'link') {
+        try {
+            var link = await importLinkParser($, request, requestQueue);
+            await saveItem('RESULT', request, link, input, env.defaultDatasetId);
+        } catch (e) {
+            log.error('Link parsing failed', e);
+            await saveItem('NORESULT', request, null, input, env.defaultDatasetId);
+        }
+    }
+    else if (label === 'variant') {
+        try {
+            var product = await variantParser($, request, requestQueue);
+            if (product.Status == "completed") {
+                log.info(`--------------COMPLETED ${product.Title}--------------`);
+                await saveItem('RESULT', request, product, input, env.defaultDatasetId);
+            }
+        } catch (e) {
+            log.error('Variant parsing failed', e);
         }
     }
 }

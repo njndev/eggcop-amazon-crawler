@@ -47,7 +47,7 @@ Apify.main(async () => {
             if(input.delivery !== ''){
                 let kukies = await Apify.getValue('puppeteerCookies');
                 if (!kukies) {
-                    const puppeteerCookies = await updateCookies({domain: request.userData.domain, delivery: input.delivery});
+                    const puppeteerCookies = await updateCookies({domain: request.userData.domain});
                     kukies = puppeteerCookies;
                     await Apify.setValue('puppeteerCookies',puppeteerCookies);
                 }
@@ -80,7 +80,7 @@ Apify.main(async () => {
                 throw new Error('Session blocked, retiring. If you see this for a LONG time, stop the run - you don\'t have any working proxy right now.'
                     + ' But by default this can happen for some time until we find working session.');
             }
-            await runCrawler({$, session, request, requestQueue, input, getReviews, env});
+            await runCrawler({$, session, request, requestQueue, input, env});
         },
         handleFailedRequestFunction: async ({ request }) => {
             log.info(`Request ${request.url} failed 4 times`);
@@ -116,43 +116,11 @@ Apify.main(async () => {
                 await page.waitFor(10000);
                 await page.waitForSelector('body')
             }
-            if(input.deliver !== ''){
-                const cookies = JSON.parse(JSON.stringify(session.cookieJar))["cookies"];
-                const cookie = cookies.find(x => x.key === 'sp-cdn');
-                const deliverCountry = input.delivery.split(',');
-                const code = deliverCountry[0];
-                if(!cookie || cookie.value !== `"L5Z9:${code}"`) {
-                    const deliveryCode = deliverCountry[1];
-                    try{
-                        try {
-                            await page.waitForSelector('#nav-global-location-slot #glow-ingress-line2');
-                            await page.click('#nav-global-location-slot #glow-ingress-line2');
-                        } catch (e) {
-                            await page.click('#nav-global-location-slot #glow-ingress-line2');
-                        }
-
-                        try {
-                            await page.waitForSelector('.a-declarative > .a-dropdown-container > #GLUXCountryListDropdown > .a-button-inner > .a-button-text');
-                            await page.click('.a-declarative > .a-dropdown-container > #GLUXCountryListDropdown > .a-button-inner > .a-button-text');
-                        } catch (e) {
-                            await page.click('.a-declarative > .a-dropdown-container > #GLUXCountryListDropdown > .a-button-inner > .a-button-text');
-                        }
-                        try {
-                            await page.waitForSelector(`.a-popover-wrapper #${deliveryCode}`);
-                            await page.click(`.a-popover-wrapper #${deliveryCode}`);
-                        } catch (e) {
-                            await page.click(`.a-popover-wrapper #${deliveryCode}`);
-                        }
-                    } catch (e) {
-                        // Cannot change location do nothing
-                    }
-                }
-            }
             const pageHTML = await page.evaluate(() => {
                 return document.body.outerHTML;
             });
             const $ = cheerio.load(pageHTML);
-            await runCrawler({$, session, request, requestQueue, input, getReviews, env});
+            await runCrawler({$, session, request, requestQueue, input, env});
         },
         handleFailedRequestFunction: async ({ page, request }) => {
             log.info(`Request ${request.url} failed 4 times`);
