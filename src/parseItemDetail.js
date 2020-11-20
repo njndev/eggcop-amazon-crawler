@@ -11,6 +11,14 @@ async function parseItemDetail($, request, requestQueue) {
     var productType = "default-type";
     if (breadCrumbs.length > 0)
         productType = breadCrumbs[breadCrumbs.length - 1];
+    let _ASIN = $("#ASIN").val();
+    if (!_ASIN) {
+        var link = $("link[rel='canonical']").attr("href");
+        if (link.indexOf("dp/")>0) {
+            let arr = link.split('dp/');
+            _ASIN = arr[arr.length - 1];
+        }
+    }
 
     let title = $('#productTitle').text() || "";
     item.Title = title.trim();
@@ -19,7 +27,7 @@ async function parseItemDetail($, request, requestQueue) {
     item.ShopifyCollectionId = 0;
     item.CategoryId = 0;
     item.SeoName = "";
-    item.Sku = $("#ASIN").text();
+    item.Sku = _ASIN;
     item.Url = request.url;
     item.Description = $('#productDescription').length !== 0 ? $('#productDescription').html() : null;
     if (!item.Description)
@@ -28,8 +36,11 @@ async function parseItemDetail($, request, requestQueue) {
     item.ProductPictures = [];
     item.Variants = [];
  
-    let price = $("#priceblock_ourprice").text();
-    let mainVariant = { Type: productType, TypeDescription: "", IsPrimaryShirt: true, Price: price, ProductAttributeValueId: 0, ImageUrl: "", ShirtColors: [], Sizes: [] }
+    let price = $("#priceblock_ourprice").text() || "";
+    if (price && price.indexOf("$") >= 0)
+        price = price.replace("$", "");
+    let priceValue = price != "" ? parseFloat(price) : 0;
+    let mainVariant = { Type: productType, TypeDescription: "", IsPrimaryShirt: true, Price: priceValue, ProductAttributeValueId: 0, ImageUrl: "", ShirtColors: [], Sizes: [] }
     //prepare sizes
     if ($("select[name='dropdown_selected_size_name']").length !== 0) {
         $("select[name='dropdown_selected_size_name'] option").each(function () {
@@ -42,50 +53,72 @@ async function parseItemDetail($, request, requestQueue) {
     //prepare variants
     let variants = [];
     let variantType = "";
-    if ($('.swatchesSquare').length !== 0) {
+    if ($('.swatches').length !== 0) {
         variantType = $(this).data("a-button-group") == "twister_style_name" ? "style" : "color";
-        $('.swatchesSquare li').each(function () {
+        $('.swatches li').each(function () {
             if ($(this).data('defaultasin')) {
                 var name = $(this).attr('title');
                 if (name && name.indexOf("Click to select")>=0)
                     name = name.replace("Click to select ", "");
                 var asin = $(this).data('defaultasin');
-                var url = $(this).data('dp-url');
-                variants.push({ name: name, asin: asin, selected: url == '' });
+                variants.push({ name: name, asin: asin, selected: asin == _ASIN });
             }
         });
     }
+    //get images
+    let images = [];
+    if ($('script:contains("ImageBlockATF")').length !== 0) {
+        const scriptText = $('script:contains("ImageBlockATF")').html();
+        if (scriptText.indexOf("'colorImages':").length !== 0
+            && scriptText.indexOf("'colorToAsin'").length !== 0
+            && scriptText.indexOf("'initial': ").length !== 0) {
+            const textParse = scriptText.split("'colorImages':")[1].split("'colorToAsin'")[0].trim().replace("'initial': ", '').replace(/(},$|^{)/g, '');
+            const parsedImageArray = JSON.parse(textParse);
+            for (const image of parsedImageArray) {
+                if (image.hiRes && image.hiRes !== null) {
+                    images.push(image.hiRes);
+                } else if (image.large && image.large !== null) {
+                    images.push(image.large);
+                } else {
+                    log.info(`Bad image, report to github, please (debug info item url: ${request.url})`);
+                }
+            }
+        }
+    }
     if (variants.length > 0) {
-        let preselected = variants[0];
+        var current = variants.filter(v => v.asin == _ASIN)[0];
+        if (current) {
+            const variant = {};
+            log.info(`"Prepare variant: ${current.name} - ${_ASIN}"`);
+            variant.Color = current.name;
+            variant.Rgb = current.name;
+            variant.IsPreselect = true;
+            variant.ImageUrl = "";
+            variant.SunfrogSKU = _ASIN;
+            variant.Sides = [];
+            for (let image of images) {
+                if (!variant.ImageUrl)
+                    variant.ImageUrl = image;
+                variant.Sides.push({ ImageUrl: image, Side: "Front", IsPreselect: image == images[0] });
+            }
+            item.Variants[0].ShirtColors.push(variant);
+            //remove current variant
+            variants = variants.filter(v => v.asin != _ASIN);
+        }
+        //continue parse variants
+        let _continue = variants[0];
         await requestQueue.addRequest({
-            url: `https://www.amazon.com/dp/${preselected.asin}`,
+            url: `https://www.amazon.com/dp/${_continue.asin}?_encoding=UTF8&psc=1`,
             userData: {
                 label: 'variant',
                 itemDetail: item,
-                asin: preselected.asin,
+                asin: _continue.asin,
                 variants: variants
             },
         }, { forefront: true });
     }
     else {
-        if ($('script:contains("ImageBlockATF")').length !== 0) {
-            const scriptText = $('script:contains("ImageBlockATF")').html();
-            if (scriptText.indexOf("'colorImages':").length !== 0
-                && scriptText.indexOf("'colorToAsin'").length !== 0
-                && scriptText.indexOf("'initial': ").length !== 0) {
-                const textParse = scriptText.split("'colorImages':")[1].split("'colorToAsin'")[0].trim().replace("'initial': ", '').replace(/(},$|^{)/g, '');
-                const parsedImageArray = JSON.parse(textParse);
-                for (const image of parsedImageArray) {
-                    if (image.hiRes && image.hiRes !== null) {
-                        item.ProductPictures.push(image.hiRes);
-                    } else if (image.large && image.large !== null) {
-                        item.ProductPictures.push(image.large);
-                    } else {
-                        log.info(`Bad image, report to github, please (debug info item url: ${request.url})`);
-                    }
-                }
-            }
-        }
+        item.ProductPictures = images;
         item.Status = "completed";
     }
 

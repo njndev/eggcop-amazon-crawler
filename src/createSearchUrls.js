@@ -58,7 +58,7 @@ async function createSearchUrls(input) {
                 const urls = input.search.split(",");
                 for (const url of urls) {
                     const request = {
-                        url: url,
+                        url: url.trim(),
                         userData: {
                             label: 'detail',
                             domain: url.split('/').splice(0, 3).filter(el => el !== "").join('//'),

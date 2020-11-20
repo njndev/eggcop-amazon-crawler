@@ -25,21 +25,17 @@ async function runCrawler(params) {
         }
         // add items to the queue
         try {
-            const items = await parseItemUrls($, request);
-            for (const item of items) {
+            const itemUrls = await parseItemUrls($, request);
+            for (const itemUrl of itemUrls) {
                 await requestQueue.addRequest({
-                    url: item.url,
+                    url: itemUrl,
                     userData: {
                         label: 'detail',
-                        keyword: request.userData.keyword,
-                        asin: item.asin,
-                        detailUrl: item.detailUrl,
-                        sellerUrl: item.sellerUrl,
                     },
                 }, { forefront: true });
             }
 
-            if (items.length === 0) {
+            if (itemUrls.length === 0) {
                 await Apify.pushData({
                     status: 'No items for this keyword.',
                     url: request.url,
@@ -58,7 +54,7 @@ async function runCrawler(params) {
         try {
             var detail = await detailParser($, request, requestQueue);
             if (detail.Status == "completed") {
-                log.info(`--------------COMPLETED ${product.Title}--------------`);
+                log.info(`--------------COMPLETED ${detail.Title}--------------`);
                 await saveItem('RESULT', request, detail, input, env.defaultDatasetId);
             }
         } catch (e) {

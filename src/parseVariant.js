@@ -43,7 +43,7 @@ async function parseVariant($, request, requestQueue) {
     if (availables.length > 0) {
         let preselected = availables[0];
         await requestQueue.addRequest({
-            url: `https://www.amazon.com/dp/${preselected.asin}`,
+            url: `https://www.amazon.com/dp/${preselected.asin}?_encoding=UTF8&psc=1`,
             userData: {
                 label: 'variant',
                 itemDetail: itemDetail,

@@ -13,15 +13,9 @@ async function extractItemDetails($, request) {
     if (items.length !== 0) {
         items.each(function () {
             const asin = $(this).attr('data-asin');
-            const sellerUrl = `${originUrl}/gp/offer-listing/${asin}`;
-            const itemUrl = `${originUrl}/dp/${asin}`;
             if (asin) {
-                itemUrls.push({
-                    url: itemUrl,
-                    asin,
-                    detailUrl: itemUrl,
-                    sellerUrl
-                });
+                const itemUrl = `https://www.amazon.com/dp/${asin}`;
+                itemUrls.push(itemUrl);
             }
         });
     }
