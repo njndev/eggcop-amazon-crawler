@@ -12,11 +12,6 @@ async function parseItemDetail($, request, requestQueue) {
     if (breadCrumbs.length > 0)
         productType = breadCrumbs[breadCrumbs.length - 1];
 
-    $('table.prodDetTable tr').each(function () {
-        if ($(this).find('th').text().trim() !== '') {
-            details[$(this).find('th').text().trim()] = $(this).find('td').text().trim();
-        }
-    });
     let title = $('#productTitle').text() || "";
     item.Title = title.trim();
     log.info(`--------------CRAWLING ${item.Title}--------------`);
