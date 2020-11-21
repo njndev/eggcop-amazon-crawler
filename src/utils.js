@@ -21,7 +21,7 @@ async function saveItem(type, request, item, input, datasetId, session) {
         if (input.maxResults) {
             if (await checkSaveCount(datasetId, input.maxResults) === true) {
                 await Apify.pushData({
-                    status: 'No sellers for this keyword.',
+                    status: 'No items for this keyword.',
                     keyword: request.userData.keyword,
                 });
             } else {
@@ -31,7 +31,7 @@ async function saveItem(type, request, item, input, datasetId, session) {
             }
         } else {
             await Apify.pushData({
-                status: 'No sellers for this keyword.',
+                status: 'No items for this keyword.',
                 keyword: request.userData.keyword,
             });
         }

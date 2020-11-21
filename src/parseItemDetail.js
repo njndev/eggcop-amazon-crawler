@@ -36,7 +36,10 @@ async function parseItemDetail($, request, requestQueue) {
     item.ProductPictures = [];
     item.Variants = [];
  
-    let price = $("#priceblock_ourprice").text() || "";
+    let price = $("#price_inside_buybox").text() || "";
+    if (price == "")
+        price = $("#priceblock_ourprice").text() || "";
+
     if (price && price.indexOf("$") >= 0)
         price = price.replace("$", "");
     let priceValue = price != "" ? parseFloat(price) : 0;

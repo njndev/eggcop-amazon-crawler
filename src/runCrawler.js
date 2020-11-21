@@ -49,7 +49,6 @@ async function runCrawler(params) {
                 keyword: request.userData.keyword,
             });
         }
-        // extract info about item and about seller offers
     } else if (label === 'detail') {
         try {
             var detail = await detailParser($, request, requestQueue);
