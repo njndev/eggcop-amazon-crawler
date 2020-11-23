@@ -55,17 +55,30 @@ async function parseItemDetail($, request, requestQueue) {
     item.Variants.push(mainVariant);
     //prepare variants
     let variants = [];
-    let variantType = "";
     if ($('.swatches').length !== 0) {
-        variantType = $(this).data("a-button-group") == "twister_style_name" ? "style" : "color";
-        $('.swatches li').each(function () {
-            if ($(this).data('defaultasin')) {
+        //{"name":"twister_size_name"} size prefix
+        //{"name":"twister_color_name"} color prefix
+        //{"name":"twister_style_name"} style prefix
+        $('.swatches').each(function () {
+            let variantGroup = $(this).data("a-button-group");
+            let variantGroupName = variantGroup["name"] || "twister_color_name";
+            log.info(JSON.stringify(variantGroup));
+            var squareItems = $(this).find("li");
+            squareItems.each(function () {
                 var name = $(this).attr('title');
-                if (name && name.indexOf("Click to select")>=0)
+                if (name && name.indexOf("Click to select") >= 0)
                     name = name.replace("Click to select ", "");
                 var asin = $(this).data('defaultasin');
-                variants.push({ name: name, asin: asin, selected: asin == _ASIN });
-            }
+                if (!name)
+                    name = $(this).text();
+                name = name.trim();
+                if (variantGroupName == "twister_color_name" || variantGroupName == "twister_style_name")
+                    variants.push({ name: name, asin: asin, selected: asin == _ASIN });
+                else {
+                    if (!mainVariant.Sizes.includes(sizename))
+                        mainVariant.Sizes.push({ SizeName: name, Price: 0 });
+                }
+            });
         });
     }
     //get images
