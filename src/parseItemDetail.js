@@ -13,10 +13,11 @@ async function parseItemDetail($, request, requestQueue) {
         productType = breadCrumbs[breadCrumbs.length - 1];
     let _ASIN = $("#ASIN").val();
     if (!_ASIN) {
-        var link = $("link[rel='canonical']").attr("href");
-        if (link.indexOf("dp/")>0) {
-            let arr = link.split('dp/');
-            _ASIN = arr[arr.length - 1];
+        var _url = request.url;
+        let index = _url.indexOf('dp/');
+        if (index > 0) {
+            _ASIN = _url.slice(index, index + 13);
+            _ASIN = _ASIN.replace("dp/", "");
         }
     }
 
