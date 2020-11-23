@@ -62,7 +62,6 @@ async function parseItemDetail($, request, requestQueue) {
         $('.swatches').each(function () {
             let variantGroup = $(this).data("a-button-group");
             let variantGroupName = variantGroup["name"] || "twister_color_name";
-            log.info(JSON.stringify(variantGroup));
             var squareItems = $(this).find("li");
             squareItems.each(function () {
                 var name = $(this).attr('title');
@@ -75,7 +74,7 @@ async function parseItemDetail($, request, requestQueue) {
                 if (variantGroupName == "twister_color_name" || variantGroupName == "twister_style_name")
                     variants.push({ name: name, asin: asin, selected: asin == _ASIN });
                 else {
-                    if (!mainVariant.Sizes.includes(sizename))
+                    if (!mainVariant.Sizes.includes(name))
                         mainVariant.Sizes.push({ SizeName: name, Price: 0 });
                 }
             });
