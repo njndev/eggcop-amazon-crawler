@@ -79,7 +79,7 @@ async function parseItemDetail($, request, requestQueue) {
                     name = $(this).text();
                 name = name.trim();
                 if (variantGroupName == "twister_color_name" || variantGroupName == "twister_style_name")
-                    variants.push({ name: name, asin: asin, selected: asin == _ASIN, url = dpUrl });
+                    variants.push({ name: name, asin: asin, selected: asin == _ASIN, url: dpUrl });
                 else {
                     if (!mainVariant.Sizes.includes(name))
                         mainVariant.Sizes.push({ SizeName: name, Price: 0 });
@@ -115,7 +115,7 @@ async function parseItemDetail($, request, requestQueue) {
         var current = variants.filter(v => v.asin == _ASIN)[0];
         if (current) {
             const variant = {};
-            log.info(`">>> Prepare variant: ${current.name} - ${_ASIN}"`);
+            log.info(`">>> Navigate to variant: ${current.name} - ${current.dpUrl}"`);
             variant.Color = current.name;
             variant.Rgb = current.name;
             variant.IsPreselect = true;

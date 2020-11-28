@@ -6,7 +6,7 @@ async function parseVariant($, request, requestQueue) {
     let current = variants.filter(v => v.asin == asin)[0];
     let availables = variants.filter(p => p.asin != asin);
     const variant = {};
-    log.info(`">>> Prepare variant: ${current.name} - ${asin}"`);
+    log.info(`">>> Navigate to variant: ${current.name} - ${current.dpUrl}"`);
     variant.Color = current.name;
     variant.Rgb = current.name;
     variant.IsPreselect = current.selected;
