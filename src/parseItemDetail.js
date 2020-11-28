@@ -78,11 +78,18 @@ async function parseItemDetail($, request, requestQueue) {
                 if (!name)
                     name = $(this).text();
                 name = name.trim();
-                if (variantGroupName == "twister_color_name" || variantGroupName == "twister_style_name")
-                    variants.push({ name: name, asin: asin, selected: asin == _ASIN, url: dpUrl });
-                else {
-                    if (!mainVariant.Sizes.includes(name))
-                        mainVariant.Sizes.push({ SizeName: name, Price: 0 });
+                switch (variantGroupName) {
+                    case "twister_color_name":
+                        variants.push({type: "color", name: name, asin: asin, selected: asin == _ASIN });
+                        break;
+                    case "twister_style_name":
+                        variants.push({ type: "style", name: name, asin: asin, selected: asin == _ASIN});
+                        break;
+                    case "twister_size_name":
+                        if (!mainVariant.Sizes.includes(name))
+                            mainVariant.Sizes.push({ SizeName: name, Price: 0 });
+                        break;
+                    default: break;
                 }
             });
         });
@@ -111,11 +118,19 @@ async function parseItemDetail($, request, requestQueue) {
     if (variants.length > 0) {
         //ensure variant asin is existed
         variants = variants.filter(v => v.asin != "");
+        //remove style if color variants are existed
+        var styleVariants = variants.filter(v => v.type == "style");
+        if (variants.filter(v => v.type == "color").length > 0 && styleVariants.length > 0) {
+            variants = variants.filter(v => v.type == "color");
+            for (let style of styleVariants) {
+                log.info(`"**Remove style ${style.name} - ${style.asin} from variants"`);
+            }
+        }
         //get current variant
         var current = variants.filter(v => v.asin == _ASIN)[0];
         if (current) {
             const variant = {};
-            log.info(`">>> Navigate to variant: ${current.name} - ${current.url}"`);
+            log.info(`">>> Navigate to variant: ${current.name} - ${current.asin}"`);
             variant.Color = current.name;
             variant.Rgb = current.name;
             variant.IsPreselect = true;
