@@ -115,7 +115,7 @@ async function parseItemDetail($, request, requestQueue) {
         var current = variants.filter(v => v.asin == _ASIN)[0];
         if (current) {
             const variant = {};
-            log.info(`">>> Navigate to variant: ${current.name} - ${current.dpUrl}"`);
+            log.info(`">>> Navigate to variant: ${current.name} - ${current.url}"`);
             variant.Color = current.name;
             variant.Rgb = current.name;
             variant.IsPreselect = true;
