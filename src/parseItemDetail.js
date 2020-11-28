@@ -68,12 +68,18 @@ async function parseItemDetail($, request, requestQueue) {
                 var name = $(this).attr('title');
                 if (name && name.indexOf("Click to select") >= 0)
                     name = name.replace("Click to select ", "");
+                var dpUrl = $(this).data('dp-url');
                 var asin = $(this).data('defaultasin');
+                if (!asin && dpUrl) {
+                    asin = dpUrl.replace('/dp/', '');
+                    if (asin.indexOf("/") > 0)
+                        asin = asin.slice(0, asin.indexOf("/"))
+                }
                 if (!name)
                     name = $(this).text();
                 name = name.trim();
                 if (variantGroupName == "twister_color_name" || variantGroupName == "twister_style_name")
-                    variants.push({ name: name, asin: asin, selected: asin == _ASIN });
+                    variants.push({ name: name, asin: asin, selected: asin == _ASIN, url = dpUrl });
                 else {
                     if (!mainVariant.Sizes.includes(name))
                         mainVariant.Sizes.push({ SizeName: name, Price: 0 });
@@ -101,11 +107,15 @@ async function parseItemDetail($, request, requestQueue) {
             }
         }
     }
+
     if (variants.length > 0) {
+        //ensure variant asin is existed
+        variants = variants.filter(v => v.asin != "");
+        //get current variant
         var current = variants.filter(v => v.asin == _ASIN)[0];
         if (current) {
             const variant = {};
-            log.info(`"Prepare variant: ${current.name} - ${_ASIN}"`);
+            log.info(`">>> Prepare variant: ${current.name} - ${_ASIN}"`);
             variant.Color = current.name;
             variant.Rgb = current.name;
             variant.IsPreselect = true;

@@ -20,6 +20,7 @@ async function updateCookies(params) {
             await page.setCookie(cookie);
         }
     }
+    console.log("COOKIE:", cookies);
     if (!exists) {
         try {
             // await page.setCookie({name: 'sp-cdn', value: `"L5Z9:${delivery}"`});
