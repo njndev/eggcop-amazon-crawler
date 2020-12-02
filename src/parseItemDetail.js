@@ -31,9 +31,9 @@ async function parseItemDetail($, request, requestQueue) {
     item.SeoName = "";
     item.Sku = _ASIN;
     item.Url = request.url;
-    item.Description = $('#aplus').length !== 0 ? $('#aplus').html() : "";
+    item.Description = $('#featurebullets_feature_div').length > 0 ? $('#featurebullets_feature_div').html() : "";
     if (!item.Description)
-        item.Description = $('#featurebullets_feature_div').length !== 0 ? $('#featurebullets_feature_div').html() : $('#productDescription').html();
+        item.Description = $('#aplus').length > 0 ? $('#aplus').html() : $('#productDescription').html();
 
     item.Status = "pending";
     item.ProductPictures = [];
