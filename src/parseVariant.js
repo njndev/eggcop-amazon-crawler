@@ -2,17 +2,21 @@ const Apify = require('apify');
 const { log } = Apify.utils;
 async function parseVariant($, request, requestQueue) {
     const { url, userData } = request;
-    const { itemDetail, asin, variants } = userData;
-    let current = variants.filter(v => v.asin == asin)[0];
-    let availables = variants.filter(p => p.asin != asin);
-    const variant = {};
-    log.info(`">>> Navigate to variant: ${current.name} - ${current.asin}"`);
-    variant.Color = current.name;
-    variant.Rgb = current.name;
-    variant.IsPreselect = current.selected;
-    variant.ImageUrl = "";
-    variant.SunfrogSKU = asin;
-    variant.Sides = [];
+    const { itemDetail, asin, variants, total } = userData;
+    let _availables = variants;
+    let _currents = _availables.filter(v => v.asin == asin);
+
+    log.info(`">>> Navigate to ${asin}"`);
+    //get variant price
+    let price = $("#price_inside_buybox").text() || "";
+    if (price == "")
+        price = $("#priceblock_ourprice").text() || "";
+    if (price == "")
+        price = $("#newBuyBoxPrice").text() || "";
+    if (price && price.indexOf("$") >= 0)
+        price = price.replace("$", "");
+    let priceValue = price != "" ? parseFloat(price) : 0;
+    //get variant images
     var images = [];
     if ($('script:contains("ImageBlockATF")').length !== 0) {
         const scriptText = $('script:contains("ImageBlockATF")').html();
@@ -32,28 +36,77 @@ async function parseVariant($, request, requestQueue) {
             }
         }
     }
-    for (let image of images) {
-        if (!variant.ImageUrl)
-            variant.ImageUrl = image;
 
-        variant.Sides.push({ ImageUrl: image, Side: "Front", IsPreselect: image == images[0] });
+    for (let current of _currents) {
+        //parse style
+        if (current.type == "style") {
+            //on parse style
+        }
+
+        //parse color
+        if (current.type == "color") {
+            const variant = {};
+            variant.Color = current.name;
+            variant.Rgb = current.name;
+            variant.IsPreselect = current.selected;
+            variant.ImageUrl = "";
+            variant.SunfrogSKU = current.asin;
+            variant.Price = priceValue;
+            variant.Sides = [];
+            for (let image of images) {
+                if (!variant.ImageUrl)
+                    variant.ImageUrl = image;
+                variant.Sides.push({ ImageUrl: image, Side: "Front", IsPreselect: image == images[0] });
+            }
+            itemDetail.Variants[0].ShirtColors.push(variant);
+        }
+        //parse size
+        if (current.type == "size") {
+            if (!itemDetail.Variants[0].Sizes.includes(current.name))
+                itemDetail.Variants[0].Sizes.push({ SizeName: current.name, Price: priceValue });
+        }
+
+        //remove current variant
+        let index = _availables.indexOf(current);
+        if (index > -1)
+            _availables.splice(index, 1);
+
+        log.info(`"_______Variant ${current.type} ${current.name} - parsed: ${total - variants.length}/${total} variants"`);
     }
-    itemDetail.Variants[0].ShirtColors.push(variant);
-    availables = availables || [];
-    if (availables.length > 0) {
-        let preselected = availables[0];
+
+    //remove current variant
+    if (_availables.length > 0) {
+        let _continue = _availables[0];
         await requestQueue.addRequest({
-            url: `https://www.amazon.com/dp/${preselected.asin}?_encoding=UTF8&psc=1`,
+            url: `https://www.amazon.com/dp/${_continue.asin}?_encoding=UTF8&psc=1`,
             userData: {
                 label: 'variant',
                 itemDetail: itemDetail,
-                asin: preselected.asin,
-                variants: availables
+                asin: _continue.asin,
+                variants: _availables,
+                total: total
             },
         }, { forefront: true });
     }
-    else 
+    else {
+        //prepare variant price
+        for (let mainVariant of itemDetail.Variants) {
+            let minSizePrice = Math.min.apply(null, mainVariant.Sizes.map(s => s.Price));
+            if (minSizePrice == 0) {
+                for (let size of mainVariant.Sizes) {
+                    if (size.Price == 0)
+                        size.Price = Math.max.apply(null, mainVariant.Sizes.map(s => s.Price));
+                }
+            }
+            let basePrice = Math.min.apply(null, mainVariant.Sizes.map(s => s.Price));
+            mainVariant.Price = +basePrice.toFixed(2);
+            //size price adjustment
+            for (let size of mainVariant.Sizes) {
+                size.Price = size.Price > basePrice ? +(size.Price - basePrice).toFixed(2) : 0;
+            }
+        }
         itemDetail.Status = "completed";
+    }
     return itemDetail;
 }
 

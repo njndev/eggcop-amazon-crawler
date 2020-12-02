@@ -3,7 +3,7 @@ const { log } = Apify.utils;
 
 async function parseItemDetail($, request, requestQueue) {
     const item = {};
-
+    let _total = 0;
     //Prepare product info
     const breadCrumbs = $('#wayfinding-breadcrumbs_feature_div').text().trim().split('\n')
         .filter(el => el.trim() != '')
@@ -20,7 +20,8 @@ async function parseItemDetail($, request, requestQueue) {
             _ASIN = _ASIN.replace("dp/", "");
         }
     }
-
+    //var deliver = $("#glow-ingress-block").text() || "";
+    //log.info(`deliver - ${deliver}`);
     let title = $('#productTitle').text() || "";
     item.Title = title.trim();
     log.info(`--------------CRAWLING ${item.Title}--------------`);
@@ -30,16 +31,18 @@ async function parseItemDetail($, request, requestQueue) {
     item.SeoName = "";
     item.Sku = _ASIN;
     item.Url = request.url;
-    item.Description = $('#featurebullets_feature_div').length !== 0 ? $('#featurebullets_feature_div').html() : "";
+    item.Description = $('#aplus').length !== 0 ? $('#aplus').html() : "";
     if (!item.Description)
-        item.Description = $('#productDescription').length !== 0 ? $('#productDescription').html() : null;
+        item.Description = $('#featurebullets_feature_div').length !== 0 ? $('#featurebullets_feature_div').html() : $('#productDescription').html();
+
     item.Status = "pending";
     item.ProductPictures = [];
     item.Variants = [];
- 
     let price = $("#price_inside_buybox").text() || "";
     if (price == "")
         price = $("#priceblock_ourprice").text() || "";
+    if (price == "")
+        price = $("#newBuyBoxPrice").text() || "";
 
     if (price && price.indexOf("$") >= 0)
         price = price.replace("$", "");
@@ -86,14 +89,16 @@ async function parseItemDetail($, request, requestQueue) {
                         variants.push({ type: "style", name: name, asin: asin, selected: asin == _ASIN});
                         break;
                     case "twister_size_name":
-                        if (!mainVariant.Sizes.includes(name))
-                            mainVariant.Sizes.push({ SizeName: name, Price: 0 });
+                        variants.push({ type: "size", name: name, asin: asin, selected: asin == _ASIN });
+                        //if (!mainVariant.Sizes.includes(name))
+                        //    mainVariant.Sizes.push({ SizeName: name, Price: 0 });
                         break;
                     default: break;
                 }
             });
         });
     }
+
     //get images
     let images = [];
     if ($('script:contains("ImageBlockATF")').length !== 0) {
@@ -118,33 +123,53 @@ async function parseItemDetail($, request, requestQueue) {
     if (variants.length > 0) {
         //ensure variant asin is existed
         variants = variants.filter(v => v.asin != "");
+
+        ///*
         //remove style if color variants are existed
         var styleVariants = variants.filter(v => v.type == "style");
         if (variants.filter(v => v.type == "color").length > 0 && styleVariants.length > 0) {
-            variants = variants.filter(v => v.type == "color");
+            variants = variants.filter(v => v.type != "style");
             for (let style of styleVariants) {
                 log.info(`"**Remove style ${style.name} - ${style.asin} from variants"`);
             }
         }
+        //*/
+        _total = variants.length;
         //get current variant
-        var current = variants.filter(v => v.asin == _ASIN)[0];
-        if (current) {
-            const variant = {};
-            log.info(`">>> Navigate to variant: ${current.name} - ${current.asin}"`);
-            variant.Color = current.name;
-            variant.Rgb = current.name;
-            variant.IsPreselect = true;
-            variant.ImageUrl = "";
-            variant.SunfrogSKU = _ASIN;
-            variant.Sides = [];
-            for (let image of images) {
-                if (!variant.ImageUrl)
-                    variant.ImageUrl = image;
-                variant.Sides.push({ ImageUrl: image, Side: "Front", IsPreselect: image == images[0] });
+        log.info(`">>> Navigate to ${_ASIN}"`);
+        var currents = variants.filter(v => v.asin == _ASIN);
+        if (currents.length > 0) {
+            for (let current of currents) {
+                //parse color
+                if (current.type == "color") {
+                    const variant = {};
+                    variant.Color = current.name;
+                    variant.Rgb = current.name;
+                    variant.IsPreselect = true;
+                    variant.ImageUrl = "";
+                    variant.SunfrogSKU = _ASIN;
+                    variant.Price = priceValue;
+                    variant.Sides = [];
+                    for (let image of images) {
+                        if (!variant.ImageUrl)
+                            variant.ImageUrl = image;
+                        variant.Sides.push({ ImageUrl: image, Side: "Front", IsPreselect: image == images[0] });
+                    }
+                    item.Variants[0].ShirtColors.push(variant);
+                }
+                //parse size
+                if (current.type == "size") {
+                    if (!item.Variants[0].Sizes.includes(current.name))
+                        item.Variants[0].Sizes.push({ SizeName: current.name, Price: priceValue });
+                }
+
+                //remove current variant
+                let index = variants.indexOf(current);
+                if (index > -1)
+                    variants.splice(index, 1);
+
+                log.info(`"_______Variant ${current.type} ${current.name} - parsed: ${_total - variants.length}/${_total} variants"`);
             }
-            item.Variants[0].ShirtColors.push(variant);
-            //remove current variant
-            variants = variants.filter(v => v.asin != _ASIN);
         }
         //continue parse variants
         let _continue = variants[0];
@@ -154,7 +179,8 @@ async function parseItemDetail($, request, requestQueue) {
                 label: 'variant',
                 itemDetail: item,
                 asin: _continue.asin,
-                variants: variants
+                variants: variants,
+                total: _total
             },
         }, { forefront: true });
     }
