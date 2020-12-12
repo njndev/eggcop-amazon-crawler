@@ -47,6 +47,7 @@ async function parseItemDetail($, request, requestQueue) {
     if (price && price.indexOf("$") >= 0)
         price = price.replace("$", "");
     let priceValue = price != "" ? parseFloat(price) : 0;
+    priceValue = priceValue || 0;
     let mainVariant = { Type: productType, TypeDescription: "", IsPrimaryShirt: true, Price: priceValue, ProductAttributeValueId: 0, ImageUrl: "", ShirtColors: [], Sizes: [] }
     //prepare sizes
     if ($("select[name='dropdown_selected_size_name']").length !== 0) {

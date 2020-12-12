@@ -16,6 +16,7 @@ async function parseVariant($, request, requestQueue) {
     if (price && price.indexOf("$") >= 0)
         price = price.replace("$", "");
     let priceValue = price != "" ? parseFloat(price) : 0;
+    priceValue = priceValue || 0;
     //get variant images
     var images = [];
     if ($('script:contains("ImageBlockATF")').length !== 0) {
@@ -91,18 +92,20 @@ async function parseVariant($, request, requestQueue) {
     else {
         //prepare variant price
         for (let mainVariant of itemDetail.Variants) {
-            let minSizePrice = Math.min.apply(null, mainVariant.Sizes.map(s => s.Price));
-            if (minSizePrice == 0) {
-                for (let size of mainVariant.Sizes) {
-                    if (size.Price == 0)
-                        size.Price = Math.max.apply(null, mainVariant.Sizes.map(s => s.Price));
+            if (mainVariant.Sizes.length > 0) {
+                let minSizePrice = Math.min.apply(null, mainVariant.Sizes.map(s => s.Price)) || 0;
+                if (minSizePrice == 0) {
+                    for (let size of mainVariant.Sizes) {
+                        if (size.Price == 0)
+                            size.Price = Math.max.apply(null, mainVariant.Sizes.map(s => s.Price));
+                    }
                 }
-            }
-            let basePrice = Math.min.apply(null, mainVariant.Sizes.map(s => s.Price));
-            mainVariant.Price = +basePrice.toFixed(2);
-            //size price adjustment
-            for (let size of mainVariant.Sizes) {
-                size.Price = size.Price > basePrice ? +(size.Price - basePrice).toFixed(2) : 0;
+                let basePrice = Math.min.apply(null, mainVariant.Sizes.map(s => s.Price)) || 0;
+                mainVariant.Price = +basePrice.toFixed(2);
+                //size price adjustment
+                for (let size of mainVariant.Sizes) {
+                    size.Price = size.Price > basePrice ? +(size.Price - basePrice).toFixed(2) : 0;
+                }
             }
         }
         itemDetail.Status = "completed";
