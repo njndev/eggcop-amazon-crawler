@@ -80,11 +80,11 @@
         "searchType": {
             "title": "Select the type of search you would like",
             "type": "string",
-            "description": "Select the type of search to perform from a choice of keywords or product Url",
+            "description": "Select the type of search to perform from a choice of keywords or product Url or Search Url",
             "editor": "select",
             "default": "keywords",
-            "enum": [ "keywords", "productUrl" ],
-            "enumTitles": [ "Keywords", "Product URLs" ]
+            "enum": [ "keywords", "productUrl", "searchUrls" ],
+            "enumTitles": [ "Keywords", "Product URLs", "Search URLs" ]
         },
         "search": {
             "title": "Search",

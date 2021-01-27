@@ -51,7 +51,34 @@ async function createSearchUrls(input) {
             log.error(JSON.stringify(e));
         }
     }
-
+    if (input.searchType === "searchUrls") {
+        try {
+            if (input.search.length !== 0) {
+                if (input.search.indexOf(',').length !== -1) {
+                    const searchUrls = input.search.split(',');
+                    for (const searchUrl of searchUrls) {
+                        urlsToProcess.push({
+                            url: searchUrl.trim(),
+                            userData: {
+                                label: 'page',
+                                domain: searchUrlBase
+                            },
+                        });
+                    }
+                } else {
+                    urlsToProcess.push({
+                        url: input.search.trim(),
+                        userData: {
+                            label: 'page',
+                            domain: searchUrlBase
+                        },
+                    });
+                }
+            }
+        } catch (e) {
+            log.error(JSON.stringify(e));
+        }
+    }
     if (input.searchType === "productUrl" ) {
         try {
             if (input.search.indexOf(',').length !== -1) {
