@@ -120,7 +120,8 @@ async function parseItemDetail($, request, requestQueue) {
             }
         }
     }
-
+    console.info(`Found ${images.length} image(s).`);
+    item.ProductPictures = images;
     if (variants.length > 0) {
         //ensure variant asin is existed
         variants = variants.filter(v => v.asin != "");
@@ -186,7 +187,6 @@ async function parseItemDetail($, request, requestQueue) {
         }, { forefront: true });
     }
     else {
-        item.ProductPictures = images;
         item.Status = "completed";
     }
 

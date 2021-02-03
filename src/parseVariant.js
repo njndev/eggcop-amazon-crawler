@@ -59,6 +59,9 @@ async function parseVariant($, request, requestQueue) {
                     variant.ImageUrl = image;
                 variant.Sides.push({ ImageUrl: image, Side: "Front", IsPreselect: image == images[0] });
             }
+            //clear product images
+            if (images.length > 0)
+                itemDetail.ProductPictures = [];
             itemDetail.Variants[0].ShirtColors.push(variant);
         }
         //parse size
@@ -111,8 +114,6 @@ async function parseVariant($, request, requestQueue) {
             if (!mainVariant.Price)
                 mainVariant.Price = 0;
         }
-        if (itemDetail.ProductPictures.length == 0 && images.length>0)
-            itemDetail.ProductPictures = images;
         itemDetail.Status = "completed";
     }
     return itemDetail;
