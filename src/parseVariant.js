@@ -107,7 +107,12 @@ async function parseVariant($, request, requestQueue) {
                     size.Price = size.Price > basePrice ? +(size.Price - basePrice).toFixed(2) : 0;
                 }
             }
+            //validate
+            if (!mainVariant.Price)
+                mainVariant.Price = 0;
         }
+        if (itemDetail.ProductPictures.length == 0 && images.length>0)
+            itemDetail.ProductPictures = images;
         itemDetail.Status = "completed";
     }
     return itemDetail;
